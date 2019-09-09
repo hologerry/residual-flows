@@ -27,13 +27,15 @@ class Normalize(nn.Module):
 
     def __init__(self, mean, std):
         nn.Module.__init__(self)
-        self.register_buffer('mean', torch.as_tensor(mean, dtype=torch.float32))
+        self.register_buffer(
+            'mean', torch.as_tensor(mean, dtype=torch.float32))
         self.register_buffer('std', torch.as_tensor(std, dtype=torch.float32))
 
     def forward(self, x, logpx=None):
         y = x.clone()
         c = len(self.mean)
-        y[:, :c].sub_(self.mean[None, :, None, None]).div_(self.std[None, :, None, None])
+        y[:, :c].sub_(self.mean[None, :, None, None]).div_(
+            self.std[None, :, None, None])
         if logpx is None:
             return y
         else:
@@ -42,7 +44,8 @@ class Normalize(nn.Module):
     def inverse(self, y, logpy=None):
         x = y.clone()
         c = len(self.mean)
-        x[:, :c].mul_(self.std[None, :, None, None]).add_(self.mean[None, :, None, None])
+        x[:, :c].mul_(self.std[None, :, None, None]).add_(
+            self.mean[None, :, None, None])
         if logpy is None:
             return x
         else:
@@ -50,7 +53,8 @@ class Normalize(nn.Module):
 
     def _logdetgrad(self, x):
         logdetgrad = (
-            self.std.abs().log().mul_(-1).view(1, -1, 1, 1).expand(x.shape[0], len(self.std), x.shape[2], x.shape[3])
+            self.std.abs().log().mul_(-1).view(1, -1, 1,
+                                               1).expand(x.shape[0], len(self.std), x.shape[2], x.shape[3])
         )
         return logdetgrad.reshape(x.shape[0], -1).sum(-1, keepdim=True)
 

@@ -143,7 +143,8 @@ class ExponentialMovingAverage(object):
         else:
             with torch.no_grad():
                 for name, param in self.module.named_parameters():
-                    self.shadow_params[name] -= (1 - self.decay) * (self.shadow_params[name] - param.data)
+                    self.shadow_params[name] -= (1 - self.decay) * \
+                        (self.shadow_params[name] - param.data)
 
     def set(self, other_ema):
         self.init()

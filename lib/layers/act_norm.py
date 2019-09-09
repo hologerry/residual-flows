@@ -30,7 +30,8 @@ class ActNormNd(nn.Module):
                 batch_var = torch.var(x_t, dim=1)
 
                 # for numerical issues
-                batch_var = torch.max(batch_var, torch.tensor(0.2).to(batch_var))
+                batch_var = torch.max(
+                    batch_var, torch.tensor(0.2).to(batch_var))
 
                 self.bias.data.copy_(-batch_mean)
                 self.weight.data.copy_(-0.5 * torch.log(batch_var))

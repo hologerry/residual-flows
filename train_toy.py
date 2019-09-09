@@ -1,21 +1,21 @@
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-
 import argparse
-import os
-import time
 import math
-import numpy as np
+import os
+import time  # noqa
 
+# import matplotlib
+# matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 
-import lib.optimizers as optim
-import lib.layers.base as base_layers
 import lib.layers as layers
+import lib.layers.base as base_layers
+import lib.optimizers as optim
 import lib.toy_data as toy_data
 import lib.utils as utils
 from lib.visualize_flow import visualize_transform
+
 
 ACTIVATION_FNS = {
     'relu': torch.nn.ReLU,
@@ -33,25 +33,33 @@ parser.add_argument(
     '--data', choices=['swissroll', '8gaussians', 'pinwheel', 'circles', 'moons', '2spirals', 'checkerboard', 'rings'],
     type=str, default='pinwheel'
 )
-parser.add_argument('--arch', choices=['iresnet', 'realnvp'], default='iresnet')
+parser.add_argument(
+    '--arch', choices=['iresnet', 'realnvp'], default='iresnet')
 parser.add_argument('--coeff', type=float, default=0.9)
 parser.add_argument('--vnorms', type=str, default='222222')
 parser.add_argument('--n-lipschitz-iters', type=int, default=5)
 parser.add_argument('--atol', type=float, default=None)
 parser.add_argument('--rtol', type=float, default=None)
-parser.add_argument('--learn-p', type=eval, choices=[True, False], default=False)
+parser.add_argument('--learn-p', type=eval,
+                    choices=[True, False], default=False)
 parser.add_argument('--mixed', type=eval, choices=[True, False], default=True)
 
 parser.add_argument('--dims', type=str, default='128-128-128-128')
-parser.add_argument('--act', type=str, choices=ACTIVATION_FNS.keys(), default='swish')
+parser.add_argument('--act', type=str,
+                    choices=ACTIVATION_FNS.keys(), default='swish')
 parser.add_argument('--nblocks', type=int, default=100)
-parser.add_argument('--brute-force', type=eval, choices=[True, False], default=False)
-parser.add_argument('--actnorm', type=eval, choices=[True, False], default=False)
-parser.add_argument('--batchnorm', type=eval, choices=[True, False], default=False)
-parser.add_argument('--exact-trace', type=eval, choices=[True, False], default=False)
+parser.add_argument('--brute-force', type=eval,
+                    choices=[True, False], default=False)
+parser.add_argument('--actnorm', type=eval,
+                    choices=[True, False], default=False)
+parser.add_argument('--batchnorm', type=eval,
+                    choices=[True, False], default=False)
+parser.add_argument('--exact-trace', type=eval,
+                    choices=[True, False], default=False)
 parser.add_argument('--n-power-series', type=int, default=None)
 parser.add_argument('--n-samples', type=int, default=1)
-parser.add_argument('--n-dist', choices=['geometric', 'poisson'], default='geometric')
+parser.add_argument(
+    '--n-dist', choices=['geometric', 'poisson'], default='geometric')
 
 parser.add_argument('--niters', type=int, default=50000)
 parser.add_argument('--batch_size', type=int, default=500)
@@ -70,10 +78,12 @@ args = parser.parse_args()
 
 # logger
 utils.makedirs(args.save)
-logger = utils.get_logger(logpath=os.path.join(args.save, 'logs'), filepath=os.path.abspath(__file__))
+logger = utils.get_logger(logpath=os.path.join(
+    args.save, 'logs'), filepath=os.path.abspath(__file__))
 logger.info(args)
 
-device = torch.device('cuda:' + str(args.gpu) if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:' + str(args.gpu)
+                      if torch.cuda.is_available() else 'cpu')
 
 np.random.seed(args.seed)
 torch.manual_seed(args.seed)
@@ -95,7 +105,8 @@ def standard_normal_logprob(z):
 
 
 def compute_loss(args, model, batch_size=None, beta=1.):
-    if batch_size is None: batch_size = args.batch_size
+    if batch_size is None:
+        batch_size = args.batch_size
 
     # load data
     x = toy_data.inf_train_gen(args.data, batch_size=batch_size)
@@ -197,7 +208,8 @@ if __name__ == '__main__':
     if args.arch == 'iresnet':
         dims = [2] + list(map(int, args.dims.split('-'))) + [2]
         blocks = []
-        if args.actnorm: blocks.append(layers.ActNorm1d(2))
+        if args.actnorm:
+            blocks.append(layers.ActNorm1d(2))
         for _ in range(args.nblocks):
             blocks.append(
                 layers.iResBlock(
@@ -211,22 +223,28 @@ if __name__ == '__main__':
                     grad_in_forward=False,
                 )
             )
-            if args.actnorm: blocks.append(layers.ActNorm1d(2))
-            if args.batchnorm: blocks.append(layers.MovingBatchNorm1d(2))
+            if args.actnorm:
+                blocks.append(layers.ActNorm1d(2))
+            if args.batchnorm:
+                blocks.append(layers.MovingBatchNorm1d(2))
         model = layers.SequentialFlow(blocks).to(device)
     elif args.arch == 'realnvp':
         blocks = []
         for _ in range(args.nblocks):
             blocks.append(layers.CouplingLayer(2, swap=False))
             blocks.append(layers.CouplingLayer(2, swap=True))
-            if args.actnorm: blocks.append(layers.ActNorm1d(2))
-            if args.batchnorm: blocks.append(layers.MovingBatchNorm1d(2))
+            if args.actnorm:
+                blocks.append(layers.ActNorm1d(2))
+            if args.batchnorm:
+                blocks.append(layers.MovingBatchNorm1d(2))
         model = layers.SequentialFlow(blocks).to(device)
 
     logger.info(model)
-    logger.info("Number of trainable parameters: {}".format(count_parameters(model)))
+    logger.info("Number of trainable parameters: {}".format(
+        count_parameters(model)))
 
-    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr,
+                           weight_decay=args.weight_decay)
 
     time_meter = utils.RunningAverageMeter(0.93)
     loss_meter = utils.RunningAverageMeter(0.93)
@@ -239,13 +257,15 @@ if __name__ == '__main__':
     for itr in range(1, args.niters + 1):
         optimizer.zero_grad()
 
-        beta = min(1, itr / args.annealing_iters) if args.annealing_iters > 0 else 1.
+        beta = min(1, itr /
+                   args.annealing_iters) if args.annealing_iters > 0 else 1.
         loss, logpz, delta_logp = compute_loss(args, model, beta=beta)
         loss_meter.update(loss.item())
         logpz_meter.update(logpz.item())
         delta_logp_meter.update(delta_logp.item())
         loss.backward()
-        if args.learn_p and itr > args.annealing_iters: compute_p_grads(model)
+        if args.learn_p and itr > args.annealing_iters:
+            compute_p_grads(model)
         optimizer.step()
         update_lipschitz(model, args.n_lipschitz_iters)
 
@@ -263,7 +283,8 @@ if __name__ == '__main__':
             update_lipschitz(model, 200)
             with torch.no_grad():
                 model.eval()
-                test_loss, test_logpz, test_delta_logp = compute_loss(args, model, batch_size=args.test_batch_size)
+                test_loss, test_logpz, test_delta_logp = compute_loss(
+                    args, model, batch_size=args.test_batch_size)
                 log_message = (
                     '[TEST] Iter {:04d} | Test Loss {:.6f} '
                     '| Test Logp(z) {:.6f} | Test DeltaLogp {:.6f}'.format(
@@ -295,7 +316,8 @@ if __name__ == '__main__':
                     p_samples, torch.randn, standard_normal_logprob, transform=sample_fn, inverse_transform=density_fn,
                     samples=True, npts=400, device=device
                 )
-                fig_filename = os.path.join(args.save, 'figs', '{:04d}.jpg'.format(itr))
+                fig_filename = os.path.join(
+                    args.save, 'figs', '{:04d}.jpg'.format(itr))
                 utils.makedirs(os.path.dirname(fig_filename))
                 plt.savefig(fig_filename)
                 plt.close()

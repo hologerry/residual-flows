@@ -8,13 +8,15 @@ from sklearn.utils import shuffle as util_shuffle
 def inf_train_gen(data, batch_size=200):
 
     if data == "swissroll":
-        data = sklearn.datasets.make_swiss_roll(n_samples=batch_size, noise=1.0)[0]
+        data = sklearn.datasets.make_swiss_roll(
+            n_samples=batch_size, noise=1.0)[0]
         data = data.astype("float32")[:, [0, 2]]
         data /= 5
         return data
 
     elif data == "circles":
-        data = sklearn.datasets.make_circles(n_samples=batch_size, factor=.5, noise=0.08)[0]
+        data = sklearn.datasets.make_circles(
+            n_samples=batch_size, factor=.5, noise=0.08)[0]
         data = data.astype("float32")
         data *= 3
         return data
@@ -88,13 +90,15 @@ def inf_train_gen(data, batch_size=200):
         labels = np.repeat(np.arange(num_classes), num_per_class)
 
         angles = rads[labels] + rate * np.exp(features[:, 0])
-        rotations = np.stack([np.cos(angles), -np.sin(angles), np.sin(angles), np.cos(angles)])
+        rotations = np.stack(
+            [np.cos(angles), -np.sin(angles), np.sin(angles), np.cos(angles)])
         rotations = np.reshape(rotations.T, (-1, 2, 2))
 
         return 2 * np.random.permutation(np.einsum("ti,tij->tj", features, rotations))
 
     elif data == "2spirals":
-        n = np.sqrt(np.random.rand(batch_size // 2, 1)) * 540 * (2 * np.pi) / 360
+        n = np.sqrt(np.random.rand(batch_size // 2, 1)) * \
+            540 * (2 * np.pi) / 360
         d1x = -np.cos(n) * n + np.random.rand(batch_size // 2, 1) * 0.5
         d1y = np.sin(n) * n + np.random.rand(batch_size // 2, 1) * 0.5
         x = np.vstack((np.hstack((d1x, d1y)), np.hstack((-d1x, -d1y)))) / 3
@@ -103,7 +107,8 @@ def inf_train_gen(data, batch_size=200):
 
     elif data == "checkerboard":
         x1 = np.random.rand(batch_size) * 4 - 2
-        x2_ = np.random.rand(batch_size) - np.random.randint(0, 2, batch_size) * 2
+        x2_ = np.random.rand(batch_size) - \
+            np.random.randint(0, 2, batch_size) * 2
         x2 = x2_ + (np.floor(x1) % 2)
         return np.concatenate([x1[:, None], x2[:, None]], 1) * 2
 

@@ -7,7 +7,8 @@ import torch.nn.functional as F
 from .utils import _pair
 from .mixed_lipschitz import InducedNormLinear, InducedNormConv2d
 
-__all__ = ['SpectralNormLinear', 'SpectralNormConv2d', 'LopLinear', 'LopConv2d', 'get_linear', 'get_conv2d']
+__all__ = ['SpectralNormLinear', 'SpectralNormConv2d',
+           'LopLinear', 'LopConv2d', 'get_linear', 'get_conv2d']
 
 
 class SpectralNormLinear(nn.Module):
@@ -32,8 +33,10 @@ class SpectralNormLinear(nn.Module):
 
         h, w = self.weight.shape
         self.register_buffer('scale', torch.tensor(0.))
-        self.register_buffer('u', F.normalize(self.weight.new_empty(h).normal_(0, 1), dim=0))
-        self.register_buffer('v', F.normalize(self.weight.new_empty(w).normal_(0, 1), dim=0))
+        self.register_buffer('u', F.normalize(
+            self.weight.new_empty(h).normal_(0, 1), dim=0))
+        self.register_buffer('v', F.normalize(
+            self.weight.new_empty(w).normal_(0, 1), dim=0))
         self.compute_weight(True, 200)
 
     def reset_parameters(self):
@@ -116,7 +119,8 @@ class SpectralNormConv2d(nn.Module):
         self.n_iterations = n_iterations
         self.atol = atol
         self.rtol = rtol
-        self.weight = nn.Parameter(torch.Tensor(out_channels, in_channels, *self.kernel_size))
+        self.weight = nn.Parameter(torch.Tensor(
+            out_channels, in_channels, *self.kernel_size))
         if bias:
             self.bias = nn.Parameter(torch.Tensor(out_channels))
         else:
@@ -135,19 +139,26 @@ class SpectralNormConv2d(nn.Module):
 
     def _initialize_u_v(self):
         if self.kernel_size == (1, 1):
-            self.register_buffer('u', F.normalize(self.weight.new_empty(self.out_channels).normal_(0, 1), dim=0))
-            self.register_buffer('v', F.normalize(self.weight.new_empty(self.in_channels).normal_(0, 1), dim=0))
+            self.register_buffer('u', F.normalize(
+                self.weight.new_empty(self.out_channels).normal_(0, 1), dim=0))
+            self.register_buffer('v', F.normalize(
+                self.weight.new_empty(self.in_channels).normal_(0, 1), dim=0))
         else:
-            c, h, w = self.in_channels, int(self.spatial_dims[0].item()), int(self.spatial_dims[1].item())
+            c, h, w = self.in_channels, int(
+                self.spatial_dims[0].item()), int(self.spatial_dims[1].item())
             with torch.no_grad():
                 num_input_dim = c * h * w
-                v = F.normalize(torch.randn(num_input_dim).to(self.weight), dim=0, eps=1e-12)
+                v = F.normalize(torch.randn(num_input_dim).to(
+                    self.weight), dim=0, eps=1e-12)
                 # forward call to infer the shape
-                u = F.conv2d(v.view(1, c, h, w), self.weight, stride=self.stride, padding=self.padding, bias=None)
-                num_output_dim = u.shape[0] * u.shape[1] * u.shape[2] * u.shape[3]
+                u = F.conv2d(v.view(1, c, h, w), self.weight,
+                             stride=self.stride, padding=self.padding, bias=None)
+                num_output_dim = u.shape[0] * \
+                    u.shape[1] * u.shape[2] * u.shape[3]
                 self.out_shape = u.shape
                 # overwrite u with random init
-                u = F.normalize(torch.randn(num_output_dim).to(self.weight), dim=0, eps=1e-12)
+                u = F.normalize(torch.randn(num_output_dim).to(
+                    self.weight), dim=0, eps=1e-12)
 
                 self.register_buffer('u', u)
                 self.register_buffer('v', v)
@@ -221,7 +232,8 @@ class SpectralNormConv2d(nn.Module):
         u = self.u
         v = self.v
         weight = self.weight
-        c, h, w = self.in_channels, int(self.spatial_dims[0].item()), int(self.spatial_dims[1].item())
+        c, h, w = self.in_channels, int(
+            self.spatial_dims[0].item()), int(self.spatial_dims[1].item())
         if update:
             with torch.no_grad():
                 itrs_used = 0
@@ -232,7 +244,8 @@ class SpectralNormConv2d(nn.Module):
                         u.view(self.out_shape), weight, stride=self.stride, padding=self.padding, output_padding=0
                     )
                     v = F.normalize(v_s.view(-1), dim=0, out=v)
-                    u_s = F.conv2d(v.view(1, c, h, w), weight, stride=self.stride, padding=self.padding, bias=None)
+                    u_s = F.conv2d(
+                        v.view(1, c, h, w), weight, stride=self.stride, padding=self.padding, bias=None)
                     u = F.normalize(u_s.view(-1), dim=0, out=u)
                     itrs_used = itrs_used + 1
                     if atol is not None and rtol is not None:
@@ -246,7 +259,8 @@ class SpectralNormConv2d(nn.Module):
                     u = u.clone()
                     v = v.clone()
 
-        weight_v = F.conv2d(v.view(1, c, h, w), weight, stride=self.stride, padding=self.padding, bias=None)
+        weight_v = F.conv2d(v.view(1, c, h, w), weight,
+                            stride=self.stride, padding=self.padding, bias=None)
         weight_v = weight_v.view(-1)
         sigma = torch.dot(u.view(-1), weight_v)
         with torch.no_grad():
@@ -257,17 +271,21 @@ class SpectralNormConv2d(nn.Module):
         return weight
 
     def forward(self, input):
-        if not self.initialized: self.spatial_dims.copy_(torch.tensor(input.shape[2:4]).to(self.spatial_dims))
+        if not self.initialized:
+            self.spatial_dims.copy_(torch.tensor(
+                input.shape[2:4]).to(self.spatial_dims))
         weight = self.compute_weight(update=self.training)
         return F.conv2d(input, weight, self.bias, self.stride, self.padding, 1, 1)
 
     def extra_repr(self):
-        s = ('{in_channels}, {out_channels}, kernel_size={kernel_size}' ', stride={stride}')
+        s = (
+            '{in_channels}, {out_channels}, kernel_size={kernel_size}' ', stride={stride}')
         if self.padding != (0,) * len(self.padding):
             s += ', padding={padding}'
         if self.bias is None:
             s += ', bias=False'
-        s += ', coeff={}, n_iters={}, atol={}, rtol={}'.format(self.coeff, self.n_iterations, self.atol, self.rtol)
+        s += ', coeff={}, n_iters={}, atol={}, rtol={}'.format(
+            self.coeff, self.n_iterations, self.atol, self.rtol)
         return s.format(**self.__dict__)
 
 
@@ -291,13 +309,16 @@ class LopLinear(nn.Linear):
         self.domain = domain
         self.codomain = codomain
         self.local_constraint = local_constraint
-        max_across_input_dims, self.norm_type = operator_norm_settings(self.domain, self.codomain)
+        max_across_input_dims, self.norm_type = operator_norm_settings(
+            self.domain, self.codomain)
         self.max_across_dim = 1 if max_across_input_dims else 0
         self.register_buffer('scale', torch.tensor(0.))
 
     def compute_weight(self):
-        scale = _norm_except_dim(self.weight, self.norm_type, dim=self.max_across_dim)
-        if not self.local_constraint: scale = scale.max()
+        scale = _norm_except_dim(
+            self.weight, self.norm_type, dim=self.max_across_dim)
+        if not self.local_constraint:
+            scale = scale.max()
         with torch.no_grad():
             self.scale.copy_(scale.max())
 
@@ -335,23 +356,28 @@ class LopConv2d(nn.Conv2d):
         **unused_kwargs,
     ):
         del unused_kwargs
-        super(LopConv2d, self).__init__(in_channels, out_channels, kernel_size, stride, padding, bias)
+        super(LopConv2d, self).__init__(in_channels,
+                                        out_channels, kernel_size, stride, padding, bias)
         self.coeff = coeff
         self.domain = domain
         self.codomain = codomain
         self.local_constraint = local_constraint
-        max_across_input_dims, self.norm_type = operator_norm_settings(self.domain, self.codomain)
+        max_across_input_dims, self.norm_type = operator_norm_settings(
+            self.domain, self.codomain)
         self.max_across_dim = 1 if max_across_input_dims else 0
         self.register_buffer('scale', torch.tensor(0.))
 
     def compute_weight(self):
-        scale = _norm_except_dim(self.weight, self.norm_type, dim=self.max_across_dim)
-        if not self.local_constraint: scale = scale.max()
+        scale = _norm_except_dim(
+            self.weight, self.norm_type, dim=self.max_across_dim)
+        if not self.local_constraint:
+            scale = scale.max()
         with torch.no_grad():
             self.scale.copy_(scale.max())
 
         # soft normalization
-        factor = torch.max(torch.ones(1).to(self.weight.device), scale / self.coeff)
+        factor = torch.max(torch.ones(1).to(
+            self.weight.device), scale / self.coeff)
 
         return self.weight / factor
 
@@ -386,18 +412,23 @@ class LipNormLinear(nn.Linear):
         self.domain = domain
         self.codomain = codomain
         self.local_constraint = local_constraint
-        max_across_input_dims, self.norm_type = operator_norm_settings(self.domain, self.codomain)
+        max_across_input_dims, self.norm_type = operator_norm_settings(
+            self.domain, self.codomain)
         self.max_across_dim = 1 if max_across_input_dims else 0
 
         # Initialize scale parameter.
         with torch.no_grad():
-            w_scale = _norm_except_dim(self.weight, self.norm_type, dim=self.max_across_dim)
-            if not self.local_constraint: w_scale = w_scale.max()
+            w_scale = _norm_except_dim(
+                self.weight, self.norm_type, dim=self.max_across_dim)
+            if not self.local_constraint:
+                w_scale = w_scale.max()
             self.scale = nn.Parameter(_logit(w_scale / self.coeff))
 
     def compute_weight(self):
-        w_scale = _norm_except_dim(self.weight, self.norm_type, dim=self.max_across_dim)
-        if not self.local_constraint: w_scale = w_scale.max()
+        w_scale = _norm_except_dim(
+            self.weight, self.norm_type, dim=self.max_across_dim)
+        if not self.local_constraint:
+            w_scale = w_scale.max()
         return self.weight / w_scale * torch.sigmoid(self.scale) * self.coeff
 
     def forward(self, input):
@@ -429,23 +460,29 @@ class LipNormConv2d(nn.Conv2d):
         **unused_kwargs,
     ):
         del unused_kwargs
-        super(LipNormConv2d, self).__init__(in_channels, out_channels, kernel_size, stride, padding, bias)
+        super(LipNormConv2d, self).__init__(in_channels,
+                                            out_channels, kernel_size, stride, padding, bias)
         self.coeff = coeff
         self.domain = domain
         self.codomain = codomain
         self.local_constraint = local_constraint
-        max_across_input_dims, self.norm_type = operator_norm_settings(self.domain, self.codomain)
+        max_across_input_dims, self.norm_type = operator_norm_settings(
+            self.domain, self.codomain)
         self.max_across_dim = 1 if max_across_input_dims else 0
 
         # Initialize scale parameter.
         with torch.no_grad():
-            w_scale = _norm_except_dim(self.weight, self.norm_type, dim=self.max_across_dim)
-            if not self.local_constraint: w_scale = w_scale.max()
+            w_scale = _norm_except_dim(
+                self.weight, self.norm_type, dim=self.max_across_dim)
+            if not self.local_constraint:
+                w_scale = w_scale.max()
             self.scale = nn.Parameter(_logit(w_scale / self.coeff))
 
     def compute_weight(self):
-        w_scale = _norm_except_dim(self.weight, self.norm_type, dim=self.max_across_dim)
-        if not self.local_constraint: w_scale = w_scale.max()
+        w_scale = _norm_except_dim(
+            self.weight, self.norm_type, dim=self.max_across_dim)
+        if not self.local_constraint:
+            w_scale = w_scale.max()
         return self.weight / w_scale * torch.sigmoid(self.scale)
 
     def forward(self, input):
@@ -502,7 +539,8 @@ def operator_norm_settings(domain, codomain):
         max_across_input_dims = False
         norm_type = 1
     else:
-        raise ValueError('Unknown combination of domain "{}" and codomain "{}"'.format(domain, codomain))
+        raise ValueError(
+            'Unknown combination of domain "{}" and codomain "{}"'.format(domain, codomain))
 
     return max_across_input_dims, norm_type
 

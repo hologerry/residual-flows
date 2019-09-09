@@ -8,7 +8,7 @@ train_imgs = []
 
 print('Reading from training set...', flush=True)
 for i in range(120):
-    tfr = 'data/celebahq/celeba-tfr/train/train-r08-s-{:04d}-of-0120.tfrecords'.format(i)
+    tfr = 'data/celeba-tfr/train/train-r08-s-{:04d}-of-0120.tfrecords'.format(i)
     print(tfr, flush=True)
 
     record_iterator = tf.python_io.tf_record_iterator(tfr)
@@ -31,7 +31,7 @@ torch.save(train_imgs, 'data/celebahq/celeba256_train.pth')
 
 validation_imgs = []
 for i in range(40):
-    tfr = 'data/celebahq/celeba-tfr/validation/validation-r08-s-{:04d}-of-0040.tfrecords'.format(i)
+    tfr = 'data/celeba-tfr/validation/validation-r08-s-{:04d}-of-0040.tfrecords'.format(i)
     print(tfr, flush=True)
 
     record_iterator = tf.python_io.tf_record_iterator(tfr)

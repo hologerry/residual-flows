@@ -7,7 +7,8 @@ class Dataset(object):
     def __init__(self, loc, transform=None, in_mem=True):
         self.in_mem = in_mem
         self.dataset = torch.load(loc)
-        if in_mem: self.dataset = self.dataset.float().div(255)
+        if in_mem:
+            self.dataset = self.dataset.float().div(255)
         self.transform = transform
 
     def __len__(self):
@@ -19,7 +20,8 @@ class Dataset(object):
 
     def __getitem__(self, index):
         x = self.dataset[index]
-        if not self.in_mem: x = x.float().div(255)
+        if not self.in_mem:
+            x = x.float().div(255)
         x = self.transform(x) if self.transform is not None else x
         return x, 0
 
@@ -27,7 +29,8 @@ class Dataset(object):
 class MNIST(object):
 
     def __init__(self, dataroot, train=True, transform=None):
-        self.mnist = vdsets.MNIST(dataroot, train=train, download=True, transform=transform)
+        self.mnist = vdsets.MNIST(
+            dataroot, train=train, download=True, transform=transform)
 
     def __len__(self):
         return len(self.mnist)
@@ -43,7 +46,8 @@ class MNIST(object):
 class CIFAR10(object):
 
     def __init__(self, dataroot, train=True, transform=None):
-        self.cifar10 = vdsets.CIFAR10(dataroot, train=train, download=True, transform=transform)
+        self.cifar10 = vdsets.CIFAR10(
+            dataroot, train=train, download=True, transform=transform)
 
     def __len__(self):
         return len(self.cifar10)

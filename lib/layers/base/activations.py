@@ -43,8 +43,10 @@ class SwishFn(torch.autograd.Function):
     def backward(ctx, grad_output):
         x, output, beta = ctx.saved_tensors
         beta_sigm = output / x
-        grad_x = grad_output * (beta * output + beta_sigm * (1 - beta * output))
-        grad_beta = torch.sum(grad_output * (x * output - output * output)).expand_as(beta)
+        grad_x = grad_output * \
+            (beta * output + beta_sigm * (1 - beta * output))
+        grad_beta = torch.sum(
+            grad_output * (x * output - output * output)).expand_as(beta)
         return grad_x / 1.1, grad_beta / 1.1
 
 
@@ -69,7 +71,8 @@ if __name__ == '__main__':
 
     plt.plot(xx.detach().numpy(), yy.detach().numpy(), label='Func')
     plt.plot(xx.detach().numpy(), dd.detach().numpy(), label='Deriv')
-    plt.plot(xx.detach().numpy(), torch.max(dd.detach().abs() - 1, torch.zeros_like(dd)).numpy(), label='|Deriv| > 1')
+    plt.plot(xx.detach().numpy(), torch.max(dd.detach().abs() - 1,
+                                            torch.zeros_like(dd)).numpy(), label='|Deriv| > 1')
     plt.legend()
     plt.tight_layout()
     plt.show()

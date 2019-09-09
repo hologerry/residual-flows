@@ -42,11 +42,13 @@ class MovingBatchNormNd(nn.Module):
 
             # moving average
             if self.bn_lag > 0:
-                used_mean = batch_mean - (1 - self.bn_lag) * (batch_mean - used_mean.detach())
+                used_mean = batch_mean - \
+                    (1 - self.bn_lag) * (batch_mean - used_mean.detach())
                 used_mean /= (1. - self.bn_lag**(self.step[0] + 1))
 
             # update running estimates
-            self.running_mean -= self.decay * (self.running_mean - batch_mean.data)
+            self.running_mean -= self.decay * \
+                (self.running_mean - batch_mean.data)
             self.step += 1
 
         # perform normalization
@@ -81,7 +83,8 @@ class MovingBatchNormNd(nn.Module):
     def __repr__(self):
         return (
             '{name}({num_features}, eps={eps}, decay={decay}, bn_lag={bn_lag},'
-            ' affine={affine})'.format(name=self.__class__.__name__, **self.__dict__)
+            ' affine={affine})'.format(
+                name=self.__class__.__name__, **self.__dict__)
         )
 
 
