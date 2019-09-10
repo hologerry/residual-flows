@@ -1,17 +1,17 @@
 import argparse
 import math
-from tqdm import tqdm
 
 import torch
+import torchvision.datasets as vdsets
 import torchvision.transforms as transforms
 from torchvision.utils import save_image
-import torchvision.datasets as vdsets
+from tqdm import tqdm
 
-from lib.resflow import ACT_FNS, ResidualFlow
 import lib.datasets as datasets
-import lib.utils as utils
 import lib.layers as layers
 import lib.layers.base as base_layers
+import lib.utils as utils
+from lib.resflow import ACT_FNS, ResidualFlow
 
 # Arguments
 parser = argparse.ArgumentParser()

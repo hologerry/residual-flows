@@ -16,7 +16,6 @@ import lib.toy_data as toy_data
 import lib.utils as utils
 from lib.visualize_flow import visualize_transform
 
-
 ACTIVATION_FNS = {
     'relu': torch.nn.ReLU,
     'tanh': torch.nn.Tanh,

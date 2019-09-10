@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import tensorflow as tf
 import torch
@@ -7,6 +9,10 @@ sess = tf.InteractiveSession()
 train_imgs = []
 
 print('Reading from training set...', flush=True)
+
+if not os.path.exists('data/celebahq/'):
+    os.makedirs('data/celebahq/')
+
 for i in range(120):
     tfr = 'data/celeba-tfr/train/train-r08-s-{:04d}-of-0120.tfrecords'.format(i)
     print(tfr, flush=True)

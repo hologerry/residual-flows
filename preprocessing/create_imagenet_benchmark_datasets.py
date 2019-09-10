@@ -10,11 +10,12 @@ tar -xvf train_32x32.tar
 tar -xvf valid_32x32.tar
 """
 
-import numpy as np
-import scipy.ndimage
 import os
 from os import listdir
 from os.path import isfile, join
+
+import numpy as np
+import scipy.ndimage
 from tqdm import tqdm
 
 
